@@ -5,12 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prototype Gianni | 1008999</title>
     <script src="https://pixijs.download/release/pixi.min.js"></script>
+
+     <script>
+        let app;
+        let player;
+        
+        window.onload = function () {
+            app = new PIXI.Application({ 
+                width: 800, 
+                height: 600,
+                backgroundColor: 0xAAAAAA
+            });
+
+            document.body.appendChild(app.view);
+
+            player = new PIXI.Sprite.from("images/player.png");
+            player.anchor.set(0.5);
+            player.x = app.view.width / 2;
+            player.y = app.view.height /2;
+
+            app.stage.addChild(player);
+        }
+    </script>
+    
 </head>
 <body>
-    <script>
-        let app = new PIXI.Application({ width: 640, height: 360 });
-
-        document.body.appendChild(app.view);
-      </script>
 </body>
 </html>
