@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movement Prototype</title>
+    <script src="https://pixijs.download/release/pixi.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <script>
+      class Game {
+        constructor() {
+          this.app = new PIXI.Application({
+            // Create the canvas
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: 0x000000,
+          });
+
+          document.body.appendChild(this.app.view);
+          this.app.view.id = "game-container";
+
+          // Load the background image
+          this.background = new PIXI.Sprite(
+            PIXI.Texture.from("images/background.png")
+          );
+          this.background.width = this.app.view.width;
+          this.background.height = this.app.view.height;
+          this.app.stage.addChild(this.background);
+
+          // Load the player image
+          this.player = new PIXI.Sprite(PIXI.Texture.from("images/player.png"));
+          this.player.anchor.set(0.5);
+          this.player.x = 150;
+          this.player.y = this.app.view.height / 2;
+          this.app.stage.addChild(this.player);
+
+          // Load the left platform image
+          this.leftPlatform = new PIXI.Sprite(
+            PIXI.Texture.from("images/platform.png")
+          );
+          this.leftPlatform.width = this.app.view.width / 2.7;
+          this.leftPlatform.height = 60;
+          this.leftPlatform.x = 0;
+          this.leftPlatform.y = this.app.view.height - this.leftPlatform.height;
+          this.app.stage.addChild(this.leftPlatform);
+
+          // Load the right platform image
+          this.rightPlatform = new PIXI.Sprite(
+            PIXI.Texture.from("images/platform.png")
+          );
+          this.rightPlatform.width = this.app.view.width / 2.7;
+          this.rightPlatform.height = 60;
+          this.rightPlatform.x = this.app.view.width - this.rightPlatform.width;
+          this.rightPlatform.y =
+            this.app.view.height - this.rightPlatform.height;
+          this.app.stage.addChild(this.rightPlatform);
+
+          // Physics
+          this.keys = {};
+          this.gravity = 0.2;
+          this.velocityY = 0;
+          this.jumpForce = -10;
+          this.onGround = false;
+
+          window.addEventListener("keydown", this.keyDown.bind(this));
+          window.addEventListener("keyup", this.keyUp.bind(this));
+          window.addEventListener("resize", this.resize.bind(this));
+
+          this.app.ticker.add(this.gameLoop.bind(this));
+        }
+
+        keyDown(e) {
+          this.keys[e.key] = true;
+        }
+
+        keyUp(e) {
+          this.keys[e.key] = false;
+        }
+
+        resize() {
+          // Resize to fullscreen
+          this.app.renderer.resize(window.innerWidth, window.innerHeight);
+          this.background.width = this.app.view.width;
+          this.background.height = this.app.view.height;
+          this.leftPlatform.width = this.app.view.width / 4;
+          this.leftPlatform.y = this.app.view.height - this.leftPlatform.height;
+          this.rightPlatform.width = this.app.view.width / 4;
+          this.rightPlatform.y =
+            this.app.view.height - this.rightPlatform.height;
+        }
+
+        checkCollision(platform) {
+          const playerBounds = this.player.getBounds();
+          const platformBounds = platform.getBounds();
+
+          return (
+            playerBounds.x + playerBounds.width > platformBounds.x &&
+            playerBounds.x < platformBounds.x + platformBounds.width &&
+            playerBounds.y + playerBounds.height > platformBounds.y &&
+            playerBounds.y < platformBounds.y + platformBounds.height
+          );
+        }
+
+        gameLoop() {
+          // Player movement and controls
+          const speed = 5;
+
+          if (this.keys["a"] && this.player.x - this.player.width / 2 > 0) {
+            this.player.x -= speed;
+          }
+          if (
+            this.keys["d"] &&
+            this.player.x + this.player.width / 2 < this.app.view.width
+          ) {
+            this.player.x += speed;
+          }
+
+          if (
+            this.checkCollision(this.leftPlatform) ||
+            this.checkCollision(this.rightPlatform)
+          ) {
+            this.onGround = true;
+            this.velocityY = 0;
+            this.player.y =
+              Math.min(this.leftPlatform.y, this.rightPlatform.y) -
+              this.player.height / 2;
+          } else {
+            this.onGround = false;
+            this.velocityY += this.gravity;
+          }
+
+          if (this.keys["w"] && this.onGround) {
+            this.velocityY = this.jumpForce;
+          }
+
+          this.player.y += this.velocityY;
+        }
+      }
+
+      const game = new Game();
+
+      // Create "Menu" button
+      const goBackButton = document.createElement("button");
+      goBackButton.textContent = "Menu";
+      goBackButton.id = "go-back-button";
+      goBackButton.addEventListener("click", () => {
+        window.location.href = "index.html";
+      });
+      document.body.appendChild(goBackButton);
+
+      // Create information text
+      const infoText = new PIXI.Text("Move around using: [W], [A], [D]", {
+        fill: "white",
+        fontSize: 40,
+      });
+      infoText.x = window.innerWidth / 2;
+      infoText.y = window.innerHeight / 2.5;
+      infoText.anchor.set(0.5, 0);
+      game.app.stage.addChild(infoText);
+    </script>
+  </body>
+</html>

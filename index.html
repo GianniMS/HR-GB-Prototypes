@@ -1,34 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prototype Gianni | 1008999</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prototypes Gianni 1008999</title>
     <script src="https://pixijs.download/release/pixi.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <script>
+      class Game {
+        constructor() {
+          this.app = new PIXI.Application({
+            // Create the canvas
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: 0x000000,
+          });
 
-     <script>
-        let app;
-        let player;
-        
-        window.onload = function () {
-            app = new PIXI.Application({ 
-                width: 800, 
-                height: 600,
-                backgroundColor: 0xAAAAAA
-            });
+          document.body.appendChild(this.app.view);
+          this.app.view.id = "game-container";
 
-            document.body.appendChild(app.view);
-
-            player = new PIXI.Sprite.from("images/player.png");
-            player.anchor.set(0.5);
-            player.x = app.view.width / 2;
-            player.y = app.view.height /2;
-
-            app.stage.addChild(player);
+          // Load the background image
+          this.background = new PIXI.Sprite(
+            PIXI.Texture.from("images/background.png")
+          );
+          this.background.width = this.app.view.width;
+          this.background.height = this.app.view.height;
+          this.app.stage.addChild(this.background);
         }
+      }
+
+      const game = new Game();
+
+      // Create title of the page
+      const titleText = new PIXI.Text("Welcome to my prototypes", {
+        fill: "white",
+        fontSize: 40,
+      });
+      titleText.x = window.innerWidth / 2;
+      titleText.y = window.innerHeight / 6;
+      titleText.anchor.set(0.5, 0);
+      game.app.stage.addChild(titleText);
     </script>
-    
-</head>
-<body>
-</body>
+
+    <div id="button-container">
+      <!-- Buttons linking to the different prototypes -->
+      <button class="button" onclick="window.location.href='movement.html'">
+        Movement Prototype
+      </button>
+      <button class="button" onclick="window.location.href='sound.html'">
+        Sound Prototype
+      </button>
+      <button class="button" onclick="window.location.href='screens.html'">
+        Screens Prototype
+      </button>
+    </div>
+  </body>
 </html>

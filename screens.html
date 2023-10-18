@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Screens Prototype</title>
+    <script src="https://pixijs.download/release/pixi.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <audio id="bgm-audio" loop>
+      <!-- The sound of the background music -->
+      <source src="sounds/bgm.mp3" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
+
+    <audio id="jump-audio">
+      <!-- The sound of the jump sound effect -->
+      <source src="sounds/jump.mp3" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
+
+    <script>
+      class Game {
+        constructor() {
+          this.app = new PIXI.Application({
+            // Create the canvas
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: 0x000000,
+          });
+
+          document.body.appendChild(this.app.view);
+          this.app.view.id = "game-container";
+
+          // Load the background image
+          this.background = new PIXI.Sprite(
+            PIXI.Texture.from("images/background.png")
+          );
+          this.background.width = this.app.view.width;
+          this.background.height = this.app.view.height;
+          this.app.stage.addChild(this.background);
+
+          // Load the player image
+          this.player = new PIXI.Sprite(PIXI.Texture.from("images/player.png"));
+          this.player.anchor.set(0.5);
+          this.player.x = 150;
+          this.player.y = this.app.view.height / 2;
+          this.app.stage.addChild(this.player);
+
+          // Load the left platform image
+          this.leftPlatform = new PIXI.Sprite(
+            PIXI.Texture.from("images/platform.png")
+          );
+          this.leftPlatform.width = this.app.view.width / 2.7;
+          this.leftPlatform.height = 60;
+          this.leftPlatform.x = 0;
+          this.leftPlatform.y = this.app.view.height - this.leftPlatform.height;
+          this.app.stage.addChild(this.leftPlatform);
+
+          // Load the right platform image
+          this.rightPlatform = new PIXI.Sprite(
+            PIXI.Texture.from("images/platform.png")
+          );
+          this.rightPlatform.width = this.app.view.width / 2.7;
+          this.rightPlatform.height = 60;
+          this.rightPlatform.x = this.app.view.width - this.rightPlatform.width;
+          this.rightPlatform.y =
+            this.app.view.height - this.rightPlatform.height;
+          this.app.stage.addChild(this.rightPlatform);
+
+          // Start text
+          this.startText = new PIXI.Text(
+            "Reach the other platform! Press [W], [A] or [D] to start",
+            {
+              fill: "white",
+              fontSize: 60,
+            }
+          );
+          this.startText.x = window.innerWidth / 2;
+          this.startText.y = window.innerHeight / 4;
+          this.startText.anchor.set(0.5, 0);
+          this.app.stage.addChild(this.startText);
+
+          // Hides the start texxt
+          this.handleStartText = this.handleStartText.bind(this);
+          window.addEventListener("keydown", this.handleStartText);
+
+          // Physics
+          this.keys = {};
+          this.gravity = 0.2;
+          this.velocityY = 0;
+          this.jumpForce = -10;
+          this.onGround = false;
+
+          window.addEventListener("keydown", this.keyDown.bind(this));
+          window.addEventListener("keyup", this.keyUp.bind(this));
+          window.addEventListener("resize", this.resize.bind(this));
+
+          this.app.ticker.add(this.gameLoop.bind(this));
+        }
+
+        keyDown(e) {
+          this.keys[e.key] = true;
+        }
+
+        keyUp(e) {
+          this.keys[e.key] = false;
+        }
+
+        resize() {
+          // Resize to fullscreen
+          this.app.renderer.resize(window.innerWidth, window.innerHeight);
+          this.background.width = this.app.view.width;
+          this.background.height = this.app.view.height;
+          this.leftPlatform.width = this.app.view.width / 4;
+          this.leftPlatform.y = this.app.view.height - this.leftPlatform.height;
+          this.rightPlatform.width = this.app.view.width / 4;
+          this.rightPlatform.y =
+            this.app.view.height - this.rightPlatform.height;
+        }
+
+        checkCollision(platform) {
+          const playerBounds = this.player.getBounds();
+          const platformBounds = platform.getBounds();
+
+          return (
+            playerBounds.x + playerBounds.width > platformBounds.x &&
+            playerBounds.x < platformBounds.x + platformBounds.width &&
+            playerBounds.y + playerBounds.height > platformBounds.y &&
+            playerBounds.y < platformBounds.y + platformBounds.height
+          );
+        }
+
+        gameLoop() {
+          // Player movement and controls
+          const speed = 5;
+
+          if (this.keys["a"] && this.player.x - this.player.width / 2 > 0) {
+            this.player.x -= speed;
+          }
+          if (
+            this.keys["d"] &&
+            this.player.x + this.player.width / 2 < this.app.view.width
+          ) {
+            this.player.x += speed;
+          }
+
+          if (
+            this.checkCollision(this.leftPlatform) ||
+            this.checkCollision(this.rightPlatform)
+          ) {
+            this.onGround = true;
+            this.velocityY = 0;
+            this.player.y =
+              Math.min(this.leftPlatform.y, this.rightPlatform.y) -
+              this.player.height / 2;
+          } else {
+            this.onGround = false;
+            this.velocityY += this.gravity;
+          }
+
+          // Play jump sound effect when the player jumps
+          const jumpAudio = document.getElementById("jump-audio");
+
+          if (this.keys["w"] && this.onGround) {
+            this.velocityY = this.jumpForce;
+            jumpAudio.currentTime = 0; // Reset the sound to the beginning
+            jumpAudio.play();
+          }
+
+          this.player.y += this.velocityY;
+
+          // Check if the player reached the right platform
+          if (this.checkCollision(this.rightPlatform)) {
+            // Show the ending message
+            const endText = new PIXI.Text(
+              "Congratulations! Go back to the menu.",
+              {
+                fill: "white",
+                fontSize: 60,
+              }
+            );
+            endText.x = window.innerWidth / 2;
+            endText.y = window.innerHeight / 4;
+            endText.anchor.set(0.5, 0);
+            game.app.stage.addChild(endText);
+
+            // Stop player movement
+            this.keys = {};
+          }
+        }
+
+        // Hides the start text
+        handleStartText(event) {
+          // Checks if W, A, or D is pressed
+          if (event.key === "w" || event.key === "a" || event.key === "d") {
+            // Hides the start text
+            this.startText.visible = false;
+
+            // Ends event listener
+            window.removeEventListener("keydown", this.handleStartText);
+          }
+        }
+      }
+
+      const game = new Game();
+
+      // Play background music when the page loads
+      const bgmAudio = document.getElementById("bgm-audio");
+      bgmAudio.play();
+
+      // Create "Menu" button
+      const goBackButton = document.createElement("button");
+      goBackButton.textContent = "Menu";
+      goBackButton.id = "go-back-button";
+      goBackButton.addEventListener("click", () => {
+        window.location.href = "index.html";
+      });
+      document.body.appendChild(goBackButton);
+
+      // Create information text
+      const infoText = new PIXI.Text("Added start and end screen", {
+        fill: "white",
+        fontSize: 40,
+      });
+      infoText.x = window.innerWidth / 2;
+      infoText.y = window.innerHeight / 2.5;
+      infoText.anchor.set(0.5, 0);
+      game.app.stage.addChild(infoText);
+    </script>
+  </body>
+</html>
